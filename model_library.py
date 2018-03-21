@@ -254,6 +254,8 @@ models_dict = {
     'gbc': build_gradientBoostingClassifiers,
     'dtree': build_decisionTreeClassifiers,
     'forest': build_randomForestClassifiers,
+    'lgb': build_LightGBMClassifiers,
+    'logit': build_LogisticRegressionClassifiers,
     'extra': build_extraTreesClassifiers,
     'kmp': build_kmeansPipelines,
     'kernp': build_kernPipelines,
