@@ -1,12 +1,13 @@
 # Author: David C. Lambert [dcl -at- panix -dot- com]
 # Copyright(c) 2013
 # License: Simple BSD
+# Modified by Tilii [reditrouncel -at- gmail -dot- com]
 """
 The :mod:`ensemble` module implements the ensemble selection
 technique of Caruana et al [1][2].
 
-Currently supports f1, auc, rmse, accuracy and mean cross entropy scores
-for hillclimbing.  Based on numpy, scipy, sklearn and sqlite.
+Currently supports f1, auc, rmse, accuracy, log_loss and mean cross entropy
+scores for hillclimbing.  Based on numpy, scipy, sklearn and sqlite.
 
 Work in progress.
 
@@ -26,12 +27,15 @@ import numpy as np
 from math import sqrt
 from cPickle import loads, dumps
 from collections import Counter
+import warnings
 
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.utils import check_random_state
-from sklearn.metrics import f1_score, roc_auc_score
+from sklearn.metrics import f1_score, roc_auc_score, log_loss
 from sklearn.metrics import mean_squared_error, accuracy_score
-from sklearn.cross_validation import StratifiedKFold
+with warnings.catch_warnings():
+    warnings.filterwarnings('ignore')
+    from sklearn.cross_validation import StratifiedKFold
 from sklearn.preprocessing import LabelBinarizer
 
 
@@ -43,6 +47,11 @@ def _f1(y, y_bin, probs):
 def _auc(y, y_bin, probs):
     """return AUC score (for binary problems only)"""
     return roc_auc_score(y, probs[:, 1])
+
+
+def _logloss(y, y_bin, probs):
+    """return negative log_loss since we're maximizing the score"""
+    return -1.0 * (log_loss(y.tolist(), probs))
 
 
 def _rmse(y, y_bin, probs):
@@ -140,6 +149,7 @@ class EnsembleSelectionClassifier(BaseEstimator, ClassifierMixin):
     _metrics = {
         'f1': _f1,
         'auc': _auc,
+        'logloss': _logloss,
         'rmse': _rmse,
         'accuracy': _accuracy,
         'xentropy': _mxentropy,
@@ -458,7 +468,7 @@ class EnsembleSelectionClassifier(BaseEstimator, ClassifierMixin):
 
         ens_count = sum(ensemble.values())
         if (self.verbose):
-            sys.stderr.write('%02d/%.3f ' % (ens_count, ens_score))
+            sys.stderr.write('%02d/%.5f ' % (ens_count, ens_score))
 
         cand_ensembles = []
         while(ens_count < self.max_models):
@@ -500,7 +510,7 @@ class EnsembleSelectionClassifier(BaseEstimator, ClassifierMixin):
             if (self.verbose):
                 if ((ens_count - self.n_best) % 8 == 0):
                     sys.stderr.write("\n         ")
-                msg = '%02d/%.3f ' % (ens_count, ens_score)
+                msg = '%02d/%.5f ' % (ens_count, ens_score)
                 sys.stderr.write(msg)
 
         if (self.verbose):
