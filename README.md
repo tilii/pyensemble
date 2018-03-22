@@ -36,7 +36,7 @@ It uses sqlite as the backing store containing pickled unfitted models, fitted m
 for each internal cross validation fold, scores and predictions for each model, and the list of
 model ids and weightings for the final ensemble.
 
-Hillclimbing can be performed using auc, accuracy, rmse, cross entropy or F1 score.
+Hillclimbing can be performed using auc, __logloss__, accuracy, rmse, cross entropy or F1 score.
 
 If the object is initialized with the _model_ parameter equal to None, the object tries to load
 a fitted ensemble from the database specified.
@@ -56,7 +56,9 @@ The user can choose from the following candidate models:
 *    sgd     : Stochastic Gradient Descent
 *    svc     : Support Vector Machines
 *    gbc     : Gradient Boosting Classifiers
+__*    lgb     : LightGBM classifier__
 *    dtree   : Decision Trees
+__*    logit   : Logistic Regression Classifier__
 *    forest  : Random Forests
 *    extra   : Extra Trees
 *    kmp     : KMeans->LogisticRegression Pipelines
@@ -74,9 +76,9 @@ Full usage is:
 
 ```
 usage: ensemble_train.py [-h]
-                         [-M {svc,sgd,gbc,dtree,forest,extra,kmp,kernp}
-                            [{svc,sgd,gbc,dtree,forest,extra,kmp,kernp} ...]]
-                         [-S {f1,auc,rmse,accuracy,xentropy}] [-b N_BAGS]
+                         [-M {svc,sgd,gbc,lgb,logit,dtree,forest,extra,kmp,kernp}
+                            [{svc,sgd,gbc,lgb,logit,dtree,forest,extra,kmp,kernp} ...]]
+                         [-S {f1,auc,logloss,rmse,accuracy,xentropy}] [-b N_BAGS]
                          [-f BAG_FRACTION] [-B N_BEST] [-m MAX_MODELS]
                          [-F N_FOLDS] [-p PRUNE_FRACTION] [-u] [-U]
                          [-e EPSILON] [-t TEST_SIZE] [-s SEED] [-v]
@@ -90,11 +92,11 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -M {svc,sgd,gbc,dtree,forest,extra,kmp,kernp}
-    [{svc,sgd,gbc,dtree,forest,extra,kmp,kernp} ...]
+  -M {svc,sgd,gbc,lgb,logit,dtree,forest,extra,kmp,kernp}
+    [{svc,sgd,gbc,lgb,logit,dtree,forest,extra,kmp,kernp} ...]
                         model types to include as ensemble candidates
                         (default: ['dtree'])
-  -S {f1,auc,rmse,accuracy,xentropy}
+  -S {f1,auc,logloss,rmse,accuracy,xentropy}
                         scoring metric used for hillclimbing (default:
                         accuracy)
   -b N_BAGS             bags to create (default: 20)
