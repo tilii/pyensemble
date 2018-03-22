@@ -56,9 +56,9 @@ The user can choose from the following candidate models:
 *    sgd     : Stochastic Gradient Descent
 *    svc     : Support Vector Machines
 *    gbc     : Gradient Boosting Classifiers
-*    lgb     : LightGBM classifier
+*    __lgb     : LightGBM classifier__
 *    dtree   : Decision Trees
-*    logit   : Logistic Regression Classifier
+*    __logit   : Logistic Regression Classifier__
 *    forest  : Random Forests
 *    extra   : Extra Trees
 *    kmp     : KMeans->LogisticRegression Pipelines
