@@ -2,6 +2,7 @@
 # Author: David C. Lambert [dcl -at- panix -dot- com]
 # Copyright(c) 2013
 # License: Simple BSD
+# Modified by Tilii [reditrouncel -at- gmail -dot- com]
 """
 ==========================================================
 Prediction utility for trained EnsembleSelectionClassifier
@@ -76,7 +77,7 @@ if (__name__ == '__main__'):
 
     for p in preds:
         if (res.return_probs):
-            mesg = " ".join(["%.5f" % v for v in p])
+            mesg = " ".join(["%.8f" % v for v in p])
         else:
             mesg = p
 
