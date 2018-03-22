@@ -2,6 +2,7 @@
 # Author: David C. Lambert [dcl -at- panix -dot- com]
 # Copyright(c) 2013
 # License: Simple BSD
+# Modified by Tilii [reditrouncel -at- gmail -dot- com]
 """
 ================================================
 Training harness for EnsembleSelectionClassifier
@@ -16,15 +17,17 @@ The user can choose from the following candidate models:
     svc     : Support Vector Machines
     gbc     : Gradient Boosting Classifiers
     dtree   : Decision Trees
+    logit   : Logistic Regression
+    lgb     : LightGBM
     forest  : Random Forests
     extra   : Extra Trees
     kmp     : KMeans->LogisticRegression Pipelines
     kern    : Nystroem->LogisticRegression Pipelines
 
 usage: ensemble_train.py [-h]
-                         [-M {svc,sgd,gbc,dtree,forest,extra,kmp,kernp}
-                            [{svc,sgd,gbc,dtree,forest,extra,kmp,kernp} ...]]
-                         [-S {f1,auc,rmse,accuracy,xentropy}] [-b N_BAGS]
+                         [-M {svc,sgd,gbc,dtree,lgb,logit,forest,extra,kmp,kernp}
+                            [{svc,sgd,gbc,dtree,lgb,logit,forest,extra,kmp,kernp} ...]]
+                         [-S {f1,auc,logloss,rmse,accuracy,xentropy}] [-b N_BAGS]
                          [-f BAG_FRACTION] [-B N_BEST] [-m MAX_MODELS]
                          [-F N_FOLDS] [-p PRUNE_FRACTION] [-u] [-U]
                          [-e EPSILON] [-t TEST_SIZE] [-s SEED] [-v]
@@ -38,11 +41,11 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -M {svc,sgd,gbc,dtree,forest,extra,kmp,kernp}
-    [{svc,sgd,gbc,dtree,forest,extra,kmp,kernp} ...]
+  -M {svc,sgd,gbc,dtree,lgb,logit,forest,extra,kmp,kernp}
+    [{svc,sgd,gbc,dtree,lgb,logit,forest,extra,kmp,kernp} ...]
                         model types to include as ensemble candidates
                         (default: ['dtree'])
-  -S {f1,auc,rmse,accuracy,xentropy}
+  -S {f1,auc,logloss,rmse,accuracy,xentropy}
                         scoring metric used for hillclimbing (default:
                         accuracy)
   -b N_BAGS             bags to create (default: 20)
@@ -71,10 +74,23 @@ from argparse import ArgumentParser
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import classification_report
 from sklearn.datasets import load_svmlight_file
-from sklearn.cross_validation import train_test_split
+from sklearn.model_selection import train_test_split, StratifiedShuffleSplit
 
 from ensemble import EnsembleSelectionClassifier
 from model_library import build_model_library
+from datetime import datetime
+import warnings
+
+
+def timer(start_time=None):
+    if not start_time:
+        start_time = datetime.now()
+        return start_time
+    elif start_time:
+        thour, temp_sec = divmod(
+            (datetime.now() - start_time).total_seconds(), 3600)
+        tmin, tsec = divmod(temp_sec, 60)
+        print('\n Time taken: %i hours %i minutes and %s seconds.' % (thour, tmin, round(tsec, 2)))
 
 
 def parse_args():
@@ -86,7 +102,7 @@ def parse_args():
     parser.add_argument('db_file', help='sqlite db file for backing store')
     parser.add_argument('data_file', help='training data in svm format')
 
-    model_choices = ['svc', 'sgd', 'gbc', 'dtree',
+    model_choices = ['svc', 'sgd', 'gbc', 'dtree', 'lgb', 'logit',
                      'forest', 'extra', 'kmp', 'kernp']
     help_fmt = 'model types to include as ensemble candidates %s' % dflt_fmt
     parser.add_argument('-M', dest='model_types', nargs='+',
@@ -95,7 +111,7 @@ def parse_args():
 
     help_fmt = 'scoring metric used for hillclimbing %s' % dflt_fmt
     parser.add_argument('-S', dest='score_metric',
-                        choices=['f1', 'auc', 'rmse', 'accuracy', 'xentropy'],
+                        choices=['f1', 'auc', 'logloss', 'rmse', 'accuracy', 'xentropy'],
                         help=help_fmt,  default='accuracy')
 
     parser.add_argument('-b', dest='n_bags', type=int,
@@ -151,17 +167,23 @@ def parse_args():
 if (__name__ == '__main__'):
     res = parse_args()
 
+    starttime = timer(None)
     X_train, y_train = load_svmlight_file(res.data_file)
     X_train = X_train.toarray()
 
     # train_test_split for testing set if test_size>0.0
     if (res.test_size > 0.0):
         do_test = True
-        splits = train_test_split(X_train, y_train,
+#        splits = train_test_split(X_train, y_train,
+        splits = StratifiedShuffleSplit(n_splits=1,
                                   test_size=res.test_size,
                                   random_state=res.seed)
+        for train_index, val_index in splits.split(X_train, y_train):
+            X_train, X_test = X_train[train_index], X_train[val_index]
+            y_train, y_test = y_train[train_index], y_train[val_index]
+        
 
-        X_train, X_test, y_train, y_test = splits
+#        X_train, X_test, y_train, y_test = splits
         print('Train/hillclimbing set size: %d' % len(X_train))
         print('              Test set size: %d\n' % len(X_test))
     else:
@@ -199,7 +221,9 @@ if (__name__ == '__main__'):
     print('fitting ensemble:\n%s\n' % ens)
 
     # fit models, score, build ensemble
-    ens.fit(X_train, y_train)
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore')
+        ens.fit(X_train, y_train)
 
     preds = ens.best_model_predict(X_train)
     score = accuracy_score(y_train, preds)
@@ -225,3 +249,4 @@ if (__name__ == '__main__'):
         fmt = '\n Test set classification report for final ensemble:\n%s'
         report = classification_report(y_test, preds)
         print(fmt % report)
+    timer(starttime)
