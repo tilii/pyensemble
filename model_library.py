@@ -46,14 +46,16 @@ def build_LightGBMClassifiers(random_state=None):
         'objective'         : ['binary'],
         'random_state'      : [random_state],
         'min_child_weight'  : [2, 5],
-        'subsample'         : np.linspace(0.4, 1.0, 3),
-        'colsample_bytree'  : np.linspace(0.4, 1.0, 3),
-        'n_estimators'      : [200, 300, 500],
+        'subsample'         : np.linspace(0.25, 0.75, 3),
+        'colsample_bytree'  : np.linspace(0.7, 1.0, 4),
+        'n_estimators'      : [100, 200],
         'learning_rate'     : [0.1, 0.05],
-        'num_leaves'        : [20, 30, 40],
-        'min_child_samples' : [10, 20, 30],
+        'num_leaves'        : [20, 40],
+        'min_child_samples' : [20, 40],
         'max_depth'         : [-1],
-        'max_bin'           : [127],
+        'max_bin'           : [63],
+        'reg_alpha'         : [0.05],
+        'reg_lambda'        : [0.1],
         'n_jobs'            : [n_thread],
     }
 
@@ -69,12 +71,12 @@ def build_LogisticRegressionClassifiers(random_state=None):
         n_thread = 1
 
     param_grid = {
-        'tol'           : np.logspace(-8, -3, num=10, base=10),
-        'C'             : np.logspace(-5, 1, num=10, base=10),
+        'tol'           : np.logspace(-8, -3, num=8, base=10),
+        'C'             : np.logspace(-3, 1, num=8, base=10),
         'solver':  ['newton-cg', 'lbfgs', 'sag'],
-        'class_weight': [None, 'balanced'],
+#        'class_weight': [None, 'balanced'],
         'random_state': [random_state],
-        'max_iter': [ 10000 ],
+        'max_iter': [100, 200 ],
         'penalty': ['l2'],
         'n_jobs': [n_thread],
         'dual': [False],
@@ -87,17 +89,18 @@ def build_LogisticRegressionClassifiers(random_state=None):
 def build_randomForestClassifiers(random_state=None):
     param_grid = {
 #        'n_estimators': [20, 50, 100],
-        'n_estimators': [20, 50],
+        'n_estimators': [2, 5],
         'criterion':  ['gini', 'entropy'],
 #        'max_features': [None, 'auto', 'sqrt', 'log2'],
-        'max_features': [None, 'sqrt'],
+        'max_features': [None, 'sqrt', 'log2'],
 #        'min_density': [0.25, 0.5, 0.75, 1.0],
 #### Added by Tilii
         'min_samples_split': [2, 5, 10],
         'min_samples_leaf': [1, 2, 5],
 ###
-        'random_state': [random_state],
-        'max_depth': [2, 5, 10],
+#        'random_state': [random_state],
+        'random_state': [rs.random_integers(100000) for i in xrange(2)],
+        'max_depth': [2, 5],
 #        'max_depth': [1, 2, 5, 10],
     }
 
@@ -106,13 +109,14 @@ def build_randomForestClassifiers(random_state=None):
 
 def build_gradientBoostingClassifiers(random_state=None):
     param_grid = {
-        'n_estimators': [10, 20, 50, 100],
+        'n_estimators': [10, 20],
+        'loss': ['deviance', 'exponential'],
 #        'subsample': np.linspace(0.2, 1.0, 5),
-        'subsample': np.linspace(0.1, 1.0, 5),
+        'subsample': np.linspace(0.2, 0.75, 5),
 #        'max_features': np.linspace(0.2, 1.0, 5),
-        'max_features': np.linspace(0.1, 1.0, 5),
+        'max_features': np.linspace(0.75, 0.2, 5),
 #        'max_depth': [1, 2, 5, 10],
-        'max_depth': [2, 5, 10],
+        'max_depth': [3, 5, 7],
     }
 
     return build_models(GradientBoostingClassifier, param_grid)
@@ -147,9 +151,9 @@ def build_decisionTreeClassifiers(random_state=None):
         'min_samples_leaf': [1, 2, 5],
 ###
 #        'max_features': [None, 'auto', 'sqrt', 'log2'],
-        'max_features': [None, 'sqrt', 'log2'],
+        'max_features': [None, 'sqrt'],
 #        'max_depth': [None, 1, 2, 5, 10],
-        'max_depth': [None, 2, 5],
+        'max_depth': [2, 5],
 #        'min_samples_split': [1, 2, 5, 10],
         'min_samples_split': [2, 5, 10],
         'random_state': [rs.random_integers(100000) for i in xrange(3)],
@@ -161,9 +165,9 @@ def build_decisionTreeClassifiers(random_state=None):
 def build_extraTreesClassifiers(random_state=None):
     param_grid = {
         'criterion': ['gini', 'entropy'],
-        'n_estimators': [5, 10, 20],
+        'n_estimators': [2, 5, 10],
         'max_features': [None, 'auto', 'sqrt', 'log2'],
-        'max_depth': [None, 1, 2, 5, 10],
+        'max_depth': [2, 5, 10],
         'min_samples_split': [2, 5, 10],
         'random_state': [random_state],
     }
