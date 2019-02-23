@@ -35,7 +35,7 @@ from sklearn.metrics import f1_score, roc_auc_score, log_loss
 from sklearn.metrics import mean_squared_error, accuracy_score
 with warnings.catch_warnings():
     warnings.filterwarnings('ignore')
-    from sklearn.cross_validation import StratifiedKFold
+    from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import LabelBinarizer
 
 
@@ -312,7 +312,7 @@ class EnsembleSelectionClassifier(BaseEstimator, ClassifierMixin):
             rs = check_random_state(self.random_state)
             self._folds = [_bootstraps(n, rs) for _ in xrange(self.n_folds)]
         else:
-            self._folds = list(StratifiedKFold(y, n_folds=self.n_folds))
+            self._folds = list(StratifiedKFold(n_folds=self.n_folds)).split(np.zeros(X.shape[0]), y)
 
         select_stmt = "select pickled_model from models where model_idx = ?"
         insert_stmt = """insert into fitted_models
